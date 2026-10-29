@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Inventory.API/Inventory.API.csproj" />
+  <Project Path="Inventory.Domain/Inventory.Domain.csproj" Id="5deb5fcb-0b77-47ec-a0ae-2a0a06f1209c" />
+  <Project Path="Inventory.Repository/Inventory.Repository.csproj" Id="61315294-be96-4bf3-ac2d-ba3119606f00" />
+  <Project Path="Inventory.Services/Inventory.Services.csproj" Id="5b9d4480-6d16-49c1-bb7e-045b0ce8ec14" />
+  <Project Path="Inventory.Utility/Inventory.Utility.csproj" Id="7e2a7394-94cd-46e0-8b12-19c75989e78d" />
+</Solution>

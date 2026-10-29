@@ -1,0 +1,2457 @@
+﻿
+-- Users
+IF NOT EXISTS (select * from [sys].[objects] where name='AspNetUsers')
+BEGIN
+CREATE TABLE [dbo].[AspNetUsers] (
+    [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [user_Id] UNIQUEIDENTIFIER NOT NULL,
+    [First_Name] NVARCHAR(256) NULL,
+    [Last_Name] NVARCHAR(256) NULL,
+    [User_Name] NVARCHAR(256) NOT NULL,
+    [Password] NVARCHAR(MAX) NOT NULL,
+    [Email] NVARCHAR(256) NOT NULL,
+    [IsActive] BIT NOT NULL CONSTRAINT DF_AspNetUsers_IsActive DEFAULT 0,
+    [IsLocked] BIT NULL CONSTRAINT DF_AspNetUsers_IsLocked DEFAULT 0,
+    [IsDeleted] BIT NULL CONSTRAINT DF_AspNetUsers_IsDeleted DEFAULT 0,
+    [Role_Id] UNIQUEIDENTIFIER NULL CONSTRAINT DF_AspNetUsers_Role_Id DEFAULT '00000000-0000-0000-0000-000000000000',
+    [Last_LoggedIn] DATETIME2 NULL
+)
+END
+
+-- Roles
+IF NOT EXISTS (select * from [sys].[objects] where name='AspNetRoles')
+BEGIN
+CREATE TABLE [AspNetRoles] (
+    [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [role_Id] UNIQUEIDENTIFIER NOT NULL,
+    [role_Name] NVARCHAR(256) NOT NULL
+)
+END
+Go
+INSERT INTO [AspNetRoles](role_Id,role_Name) values(NEWID(),'Administrator')
+Go
+INSERT INTO [AspNetRoles](role_Id,role_Name) values(NEWID(),'User')
+
+
+
+-- Application Menus
+IF NOT EXISTS (select * from [sys].[objects] where name='Application_Menus')
+Begin
+    CREATE TABLE Application_Menus(
+	    [Id] INT IDENTITY(1,1) primary key,
+	    [Menu_Id] UNIQUEIDENTIFIER NOT NULL,
+	    [Menu_Name] varchar(255) NOT NULL,
+	    [Description] varchar(255)NOT NULL,
+	    [IsEnable] bit DEFAULT 0
+    )
+    
+End
+
+
+-- User Menus Rights
+IF NOT EXISTS (select * from [sys].[objects] where name='User_Menu_Rights')
+Begin
+CREATE TABLE User_Menu_Rights(
+	[Id] INT IDENTITY(1,1) primary key,
+	[Menu_Id] UNIQUEIDENTIFIER NOT NULL,
+    [Role_Id] UNIQUEIDENTIFIER NOT NULL,
+	[Menu_Name] varchar(255) NOT NULL,
+	[Description] varchar(255)NOT NULL,
+	[IsEnable] bit DEFAULT 0,
+	[CreatedBy] varchar(255) NOT NULL,
+	[CreatedAt] DateTime DEFAULT GETDATE(),
+	[UpdatedBy] varchar(255) NULL,
+	[UpdatedAt] DateTime NULL
+)
+End
+
+-- Masters
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuCompany','Company',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuCustomer','Customer',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuUnitOfMeasurement','Unit Of Measurement',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuPaymentMode','Payment Mode',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuPaymentTerms','Payment Terms',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuSalesType','Sales Type',0)
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE name = 'Customer' AND type = 'U')
+BEGIN
+    CREATE TABLE [dbo].[Customer]
+    (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Customer_Id] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID(),
+        [Customer_Name] NVARCHAR(200) NOT NULL,
+        [Address1] NVARCHAR(500) NOT NULL DEFAULT '',
+        [Address2] NVARCHAR(500) NOT NULL DEFAULT '',
+        [City] NVARCHAR(100) NOT NULL DEFAULT '',
+        [Customer_State] NVARCHAR(100) NOT NULL DEFAULT '',
+        [Country] NVARCHAR(100) NOT NULL DEFAULT '',
+        [Phone_Number] NVARCHAR(50) NOT NULL DEFAULT '',
+        [Email] NVARCHAR(200) NOT NULL DEFAULT '',
+        [Gst_Number] NVARCHAR(50) NOT NULL DEFAULT '',
+        [CreatedBy] VARCHAR(100) NULL,
+        [CreatedAt] DATETIME2(0) NULL DEFAULT SYSUTCDATETIME(),
+        [UpdatedBy] VARCHAR(100) NULL,
+        [UpdatedAt] DATETIME2(0) NULL,
+        [DeletedBy] VARCHAR(100) NULL,
+        [DeletedAt] DATETIME2(0) NULL,
+        [IsActive] BIT NOT NULL DEFAULT 1,
+        [IsDeleted] BIT NOT NULL DEFAULT 0,
+        CONSTRAINT [UQ_Customer_Customer_Id] UNIQUE ([Customer_Id])
+    );
+
+    CREATE INDEX [IX_Customer_Name] ON [dbo].[Customer] ([Customer_Name]);
+END
+
+--inventory
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuProduct','Product',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuRawMaterial','Raw Material',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuProductStock','Product Stock',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuRawMaterialStock','Raw Material Stock',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuStockAudit','Stock Audit',0)
+
+--POINT_OF_SALAE
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuOrderPlaced','Order Placed',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuSales','Sales',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuSalesReturn','Sales Return',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuCourrierFollowup','Courrier Follwup',0)
+
+--APPROVALS
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuOrderApproval','Order Approval',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuProductApproval','Product Approval',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuRawMaterialApproval','Raw Material Approval',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuSalesApproval','Sales Approval',0)
+
+
+--REPORTS
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuStockReport','Stock Report',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuSalesReport','Sales Report',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuProfitLossReport','Profit & Loss Report',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuDailyTransactionReport','Daily Transaction Report',0)
+
+--SETTINGS
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuUserSettings','User Settings',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuUserRights','User Permissions',0)
+INSERT INTO Application_Menus(Menu_Id,Menu_Name,Description,IsEnable) VALUES(NEWID(),'menuGeneralSettings','Genneral Settings',0)
+
+
+Go
+-- Masters Tables
+If not exists(select * from sys.objects where name='Unit_Of_Measurement' and type='U')
+Begin
+CREATE TABLE Unit_Of_Measurement(
+	Id int IDENTITY(1,1) primary key NOT NULL,
+	Uom_Id UNIQUEIDENTIFIER NOT NULL,
+	Uom varchar(max) NOT NULL,
+	Abbrevation varchar(10) NOT NULL,
+	IsActive bit DEFAULT 1 NOT NULL,
+	IsDeleted bit DEFAULT 0 NOT NULL,
+	CreatedBy varchar(max) NOT NULL,
+	CreatedAt Date DEFAULT GETDATE(),
+	UpdatedBy varchar(max),
+	UpdatedAt Date DEFAULT NULL,
+	DeletedBy varchar(max),
+	DeletedAt Date  DEFAULT NULL
+)
+End
+Go
+If not exists(select * from sys.objects where name='Payment_Mode' and type='U')
+Begin
+CREATE TABLE Payment_Mode(
+	Id int IDENTITY(1,1) primary key NOT NULL,
+	PaymentMode_Id UNIQUEIDENTIFIER NOT NULL,
+	PaymentMode varchar(max) NOT NULL,
+	IsActive bit DEFAULT 1 NOT NULL,
+	IsDeleted bit DEFAULT 0 NOT NULL,
+	CreatedBy varchar(max) NOT NULL,
+	CreatedAt Date DEFAULT GETDATE(),
+	UpdatedBy varchar(max),
+	UpdatedAt Date DEFAULT NULL,
+	DeletedBy varchar(max),
+	DeletedAt Date  DEFAULT NULL
+)
+End
+If not exists(select * from sys.objects where name='Payment_Terms' and type='U')
+Begin
+CREATE TABLE Payment_Terms(
+	Id int IDENTITY(1,1) primary key NOT NULL,
+	PaymentTerms_Id UNIQUEIDENTIFIER NOT NULL,
+	PaymentTerms varchar(max) NOT NULL,
+	IsActive bit DEFAULT 1 NOT NULL,
+	IsDeleted bit DEFAULT 0 NOT NULL,
+	CreatedBy varchar(max) NOT NULL,
+	CreatedAt Date DEFAULT GETDATE(),
+	UpdatedBy varchar(max),
+	UpdatedAt Date DEFAULT NULL,
+	DeletedBy varchar(max),
+	DeletedAt Date  DEFAULT NULL
+)
+End
+
+GO
+If not exists(select * from sys.objects where name='Company' and type='U')
+Begin
+CREATE TABLE [dbo].[Company] (
+    [Id]            INT   IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    [Company_Id]    UNIQUEIDENTIFIER NOT NULL,
+    [Company_Name]  NVARCHAR (MAX)   NULL,
+    [Address1]      NVARCHAR (MAX)   NOT NULL,
+    [Address2]      NVARCHAR (MAX)   NOT NULL,
+    [City]          NVARCHAR (MAX)   NOT NULL,
+    [Company_State] NVARCHAR (MAX)   NOT NULL,
+    [Country]       NVARCHAR (MAX)   NOT NULL,
+    [Phone_Number]  NVARCHAR (MAX)   NULL,
+    [Email]         NVARCHAR (MAX)   NULL,
+    [Gst_Number]    NVARCHAR (MAX)   NOT NULL,
+    [IsActive]      BIT              NOT NULL,
+    [IsDeleted]     BIT              NOT NULL,
+    [CreatedBy]     NVARCHAR (MAX)   NOT NULL,
+    [CreatedAt]     DATE             NULL,
+    [UpdatedBy]     NVARCHAR (MAX)   NULL,
+    [UpdatedAt]     DATE             NULL,
+    [DeletedBy]     NVARCHAR (MAX)   NULL,
+    [DeletedAt]     DATE             NULL
+);
+End
+
+
+If not exists(select * from sys.objects where name='BankDetails' and type='U')
+Begin
+CREATE TABLE [BankDetails] (
+    [Id] INT IDENTITY(1,1) PRIMARY KEY,
+    [Bank_Id] UNIQUEIDENTIFIER NOT NULL,
+    [Bank_Name] NVARCHAR(255) NULL,
+    [Branch_Addresss] NVARCHAR(MAX) NULL,
+    [Account_Holder_Name] NVARCHAR(255) NULL,
+    [Account_Number] NVARCHAR(255) NULL,
+    [Ifsc_Code] NVARCHAR(11) NULL,
+    [Micr_Code] NVARCHAR(9) NULL,
+    [Phone_Number] NVARCHAR(20) NULL,
+    [Email] NVARCHAR(100) NULL,
+    [Reference_Id] UNIQUEIDENTIFIER NOT NULL
+);
+End
+Go
+If not exists(select * from sys.objects where name='Sales_Type' and type='U')
+Begin
+CREATE TABLE Sales_Type(
+	Id int IDENTITY(1,1) primary key NOT NULL,
+	SalesType_Id UNIQUEIDENTIFIER NOT NULL,
+	SalesType varchar(max) NOT NULL,
+	IsActive bit DEFAULT 1 NOT NULL,
+	IsDeleted bit DEFAULT 0 NOT NULL,
+	CreatedBy varchar(max) NOT NULL,
+	CreatedAt Date DEFAULT GETDATE(),
+	UpdatedBy varchar(max),
+	UpdatedAt Date DEFAULT NULL,
+	DeletedBy varchar(max),
+	DeletedAt Date  DEFAULT NULL
+)
+End
+
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE name='Product_Group' AND type='U')
+BEGIN
+    CREATE TABLE Product_Group
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+        ProductGroup_Id UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+
+        ProductGroupName VARCHAR(100) NOT NULL,
+        ProductGroupCode VARCHAR(20) NULL,
+        Description VARCHAR(MAX) NULL,
+
+        IsActive BIT NOT NULL DEFAULT 1,
+        IsDeleted BIT NOT NULL DEFAULT 0,
+
+        CreatedBy VARCHAR(MAX) NOT NULL,
+        CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+        UpdatedBy VARCHAR(MAX) NULL,
+        UpdatedAt DATETIME NULL,
+
+        DeletedBy VARCHAR(MAX) NULL,
+        DeletedAt DATETIME NULL
+    )
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE name='Department' AND type='U')
+BEGIN
+    CREATE TABLE Department
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+        Department_Id UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+
+        DepartmentName VARCHAR(100) NOT NULL,
+        DepartmentCode VARCHAR(20) NULL,
+     
+
+        IsActive BIT NOT NULL DEFAULT 1,
+        IsDeleted BIT NOT NULL DEFAULT 0,
+
+        CreatedBy VARCHAR(MAX) NOT NULL,
+        CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+        UpdatedBy VARCHAR(MAX) NULL,
+        UpdatedAt DATETIME NULL,
+
+        DeletedBy VARCHAR(MAX) NULL,
+        DeletedAt DATETIME NULL
+    )
+END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE name='Designation' AND type='U')
+BEGIN
+    CREATE TABLE Designation
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+        Designation_Id UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+
+        DesignationName VARCHAR(100) NOT NULL,
+        DesignationCode VARCHAR(20) NULL,
+     
+
+        IsActive BIT NOT NULL DEFAULT 1,
+        IsDeleted BIT NOT NULL DEFAULT 0,
+
+        CreatedBy VARCHAR(MAX) NOT NULL,
+        CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+        UpdatedBy VARCHAR(MAX) NULL,
+        UpdatedAt DATETIME NULL,
+
+        DeletedBy VARCHAR(MAX) NULL,
+        DeletedAt DATETIME NULL
+    );
+END
+
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE name='EmployeeStatus' AND type='U')
+BEGIN
+CREATE TABLE EmployeeStatus
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+
+    StatusCode VARCHAR(30) NOT NULL,
+    StatusName VARCHAR(100) NOT NULL,
+    Description VARCHAR(250) NULL,
+
+    IsActive BIT NOT NULL DEFAULT 1,
+    IsDeleted BIT NOT NULL DEFAULT 0,
+
+    CreatedBy VARCHAR(100) NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    UpdatedBy VARCHAR(100) NULL,
+    UpdatedAt DATETIME NULL,
+    DeletedBy VARCHAR(100) NULL,
+    DeletedAt DATETIME NULL
+);
+END
+
+IF NOT EXISTS( SELECT *  FROM sys.objects WHERE name = 'Employee' AND type = 'U')
+BEGIN
+
+    CREATE TABLE Employee
+    (
+        Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+        Employee_Id UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+        EmployeeCode VARCHAR(30) NOT NULL,
+
+        FirstName VARCHAR(100) NOT NULL,
+        MiddleName VARCHAR(100) NULL,
+        LastName VARCHAR(100) NULL,
+        DisplayName VARCHAR(200) NOT NULL,
+
+        -- Personal
+        DateOfBirth DATE NULL,
+
+        -- Contact
+        Email VARCHAR(200) NULL,
+        MobileNumber VARCHAR(30) NULL,
+
+        -- Address
+        AddressLine1 VARCHAR(200) NULL,
+        AddressLine2 VARCHAR(200) NULL,
+        AddressLine3 VARCHAR(200) NULL,
+        City VARCHAR(100) NULL,
+        District VARCHAR(100) NULL,
+        PostalCode VARCHAR(20) NULL,
+        Landmark VARCHAR(200) NULL,
+
+        -- Organization
+        DepartmentId INT NULL,
+        DesignationId INT NULL,  
+
+        -- Employment
+
+        JoiningDate DATE NULL,
+        ConfirmationDate DATE NULL,
+        ResignationDate DATE NULL,
+        LastWorkingDate DATE NULL,
+
+        -- Employee Status
+        EmployeeStatusId INT NULL,
+
+        -- Image
+        ProfileImagePath VARCHAR(500) NULL,
+
+        -- Remarks
+        Remarks VARCHAR(1000) NULL,
+
+        -- Status
+        IsActive BIT NOT NULL DEFAULT 1,
+        IsDeleted BIT NOT NULL DEFAULT 0,
+
+        -- Audit
+        CreatedBy VARCHAR(MAX) NOT NULL,
+        CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+        UpdatedBy VARCHAR(MAX) NULL,
+        UpdatedAt DATETIME NULL,
+
+        DeletedBy VARCHAR(MAX) NULL,
+        DeletedAt DATETIME NULL
+
+        -- Constraints
+        CONSTRAINT UQ_Employee_EmployeeId
+            UNIQUE (Employee_Id),
+
+        CONSTRAINT UQ_Employee_EmployeeCode
+            UNIQUE (EmployeeCode),
+			  -- Foreign Keys
+		CONSTRAINT FK_Employee_Department
+			FOREIGN KEY (DepartmentId)
+			REFERENCES Department(Id),
+
+		CONSTRAINT FK_Employee_Designation
+			FOREIGN KEY (DesignationId)
+			REFERENCES Designation(Id)
+
+    );
+
+END;
+GO
+GO
+If not exists(select * from sys.objects where name='Supplier' and type='U')
+Begin
+CREATE TABLE [dbo].[Supplier] (
+    [Id]             INT              IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    [Supplier_Id]    UNIQUEIDENTIFIER NOT NULL,
+    [Supplier_Name]  NVARCHAR (MAX)   NULL,
+    [Address1]       NVARCHAR (MAX)   NOT NULL,
+    [Address2]       NVARCHAR (MAX)   NOT NULL,
+    [City]           NVARCHAR (MAX)   NOT NULL,
+    [Supplier_State] NVARCHAR (MAX)   NOT NULL,
+    [Country]        NVARCHAR (MAX)   NOT NULL,
+    [Phone_Number]   NVARCHAR (MAX)   NULL,
+    [Email]          NVARCHAR (MAX)   NULL,
+    [Gst_Number]     NVARCHAR (MAX)   NOT NULL,
+    [IsActive]       BIT              NOT NULL,
+    [IsDeleted]      BIT              NOT NULL,
+    [CreatedBy]      NVARCHAR (MAX)   NOT NULL,
+    [CreatedAt]      DATE             NULL,
+    [UpdatedBy]      NVARCHAR (MAX)   NULL,
+    [UpdatedAt]      DATE             NULL,
+    [DeletedBy]      NVARCHAR (MAX)   NULL,
+    [DeletedAt]      DATE             NULL
+);
+End
+
+ALTER TABLE [dbo].[AspNetUsers]
+ADD [FailedLoginAttempts] [int] NOT NULL
+    CONSTRAINT [DF_AspNetUsers_FailedLoginAttempts] DEFAULT ((0));
+
+ALTER TABLE [dbo].[AspNetUsers]
+ADD [LockoutEnd] [datetime2](7) NULL;
+
+ALTER TABLE [dbo].[AspNetUsers]
+ALTER COLUMN [IsLocked] [bit] NOT NULL;
+
+If not exists(select * from sys.objects where name='Job_Receipt_Master' and type='U')
+Begin
+CREATE TABLE Job_Receipt_Master (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Job_Receipt_Id UNIQUEIDENTIFIER NOT NULL,
+    Job_Receipt_Number NVARCHAR(15) NOT NULL,
+    Job_Receipt_Date DATETIME2 NULL,
+    Supplier_Id INT NOT NULL,
+    Vehicle_Number NVARCHAR(MAX) NULL,
+    First_Weight DECIMAL(18, 3) NULL,
+    Second_Weight DECIMAL(18, 3) NULL,
+    Net_Weight DECIMAL(18, 3) NULL,
+    Total_Quantity DECIMAL(18, 3) NULL,
+    Total_Amount DECIMAL(18, 3) NULL,
+    Payment_Status INT NOT NULL,
+    -- AuditFields columns (assuming standard audit fields)
+    CreatedBy NVARCHAR(MAX) NULL,
+    CreatedAt DATETIME NULL,
+    UpdatedBy NVARCHAR(MAX) NULL,
+    UpdatedAt DATETIME NULL,
+    DeletedBy NVARCHAR(MAX) NULL,
+    DeletedAt DATETIME NULL 
+);
+End
+
+If not exists(select * from sys.objects where name='Job_Receipt_Items' and type='U')
+Begin
+CREATE TABLE Job_Receipt_Items (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Job_Receipt_Id UNIQUEIDENTIFIER NOT NULL,
+    Job_Receipt_Item_Id UNIQUEIDENTIFIER NOT NULL,
+    Quantity DECIMAL(18, 3) NULL,
+    Rate DECIMAL(18, 3) NULL,
+    Amount DECIMAL(18, 3) NULL,
+    Remarks NVARCHAR(MAX) NULL
+);
+End
+
+ALTER TABLE Job_Receipt_Master
+ADD CONSTRAINT UQ_Job_Receipt_Nuber UNIQUE (Job_Receipt_Number)
+
+ALTER TABLE Job_Receipt_Master DROP COLUMN Supplier_Id
+
+ALTER TABLE Job_Receipt_Master ADD Supplier_Id UNIQUEIDENTIFIER NOT NULL
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Production_Batch_Master'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Production_Batch_Master]
+    (
+        -- Primary Key
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business/Application Identifier
+        [Production_Batch_Id] UNIQUEIDENTIFIER NOT NULL,        
+
+        -- Batch Number
+        [Production_Batch_Number] NVARCHAR(15) NOT NULL,
+
+        -- Company
+        [Company_Id] INT NOT NULL,
+
+		[Employee_Id] INT NULL,
+
+		[ProductionStatus_Id] INT NULL,
+
+        
+        Production_Status INT NULL,
+         Supervisor_Id int NULL,
+
+        -- Production Dates
+        [Start_Date] DATETIME NULL,
+
+        [End_Date] DATETIME NULL,
+
+        -- Remarks
+        [Remarks] NVARCHAR(1000) NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Production_Batch_Master]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Unique Business ID
+        CONSTRAINT [UQ_Production_Batch_Master_Id]
+            UNIQUE ([Production_Batch_Id]),
+
+        -- Unique Batch Number
+        CONSTRAINT [UQ_Production_Batch_Master_Number]
+            UNIQUE ([Production_Batch_Number]),
+
+        -- Company Foreign Key
+        CONSTRAINT [FK_Production_Batch_Master_Company]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id]),
+
+		-- Employee Foreign Key
+        CONSTRAINT [FK_Production_Batch_Master_Employee]
+            FOREIGN KEY ([Employee_Id])
+            REFERENCES [dbo].[Employee]([Id])
+    );
+
+END;
+
+
+
+
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'UQ_Job_Receipt_Master_Job_Receipt_Id'
+      AND object_id = OBJECT_ID('dbo.Job_Receipt_Master')
+)
+BEGIN
+    ALTER TABLE [dbo].[Job_Receipt_Master]
+    ADD CONSTRAINT [UQ_Job_Receipt_Master_Job_Receipt_Id]
+    UNIQUE ([Job_Receipt_Id]);
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Production_Batch_Details'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Production_Batch_Details]
+    (
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        [Production_Batch_Detail_Id] UNIQUEIDENTIFIER NOT NULL,
+ 
+        [Production_Batch_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        [Job_Receipt_Master_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        [Input_Quantity] DECIMAL(18,3) NOT NULL,
+
+		[Is_selected] [bit] NULL,
+
+        [Remarks] NVARCHAR(1000) NULL,
+
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME2(0) NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME2(0) NULL,
+
+        CONSTRAINT [PK_Production_Batch_Details]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        CONSTRAINT [UQ_Production_Batch_Details_Id]
+            UNIQUE ([Production_Batch_Detail_Id]),
+
+        CONSTRAINT [FK_Production_Batch_Details_Batch]
+            FOREIGN KEY ([Production_Batch_Id])
+            REFERENCES [dbo].[Production_Batch_Master]([Production_Batch_Id]),
+
+        CONSTRAINT [FK_Production_Batch_Details_JobReceipt]
+            FOREIGN KEY ([Job_Receipt_Master_Id])
+            REFERENCES [dbo].[Job_Receipt_Master]([Job_Receipt_Id]),
+
+        CONSTRAINT [UQ_Production_Batch_Details_Batch_JobReceipt]
+            UNIQUE ([Production_Batch_Id], [Job_Receipt_Master_Id])
+    );
+
+END;
+
+
+-- =============================================
+-- Stored Procedure: sp_GetProductionBatchList
+-- Returns production batch list with supplier name,
+-- supervisor name, and total quantity for the UI grid.
+-- =============================================
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'sp_GetProductionBatchList' AND type = 'P')
+    DROP PROCEDURE [dbo].[sp_GetProductionBatchList];
+GO
+
+  
+create  PROCEDURE [dbo].[sp_GetProductionBatchList]  
+    @SearchText NVARCHAR(255) = NULL,  
+    @FromDate   DATETIME2     = NULL,  
+    @ToDate     DATETIME2     = NULL  
+AS  
+BEGIN  
+    SET NOCOUNT ON;  
+  
+    SELECT  
+        pb.[Id],  
+        pb.[Production_Batch_Id],  
+        pb.[Production_Batch_Number],    
+        pb.[Start_Date],  
+        pb.[End_Date]   ,
+		isnull(sum(pd.Input_Quantity),0) as total_Input_Qty
+    FROM [dbo].[Production_Batch_Master] pb   
+	inner join [Production_Batch_Details] pd on pd.Production_Batch_Id=pb.Production_Batch_Id 
+    WHERE pb.[DeletedAt] IS NULL  
+      AND (@SearchText IS NULL OR pb.[Production_Batch_Number] LIKE '%' + @SearchText + '%')  
+      AND (@FromDate IS NULL OR pb.[Start_Date] >= @FromDate)  
+      AND (@ToDate   IS NULL OR pb.[Start_Date] <= @ToDate)  
+	  group by    pb.[Id],  
+        pb.[Production_Batch_Id],  
+        pb.[Production_Batch_Number],    
+        pb.[Start_Date],  
+        pb.[End_Date] 
+    ORDER BY pb.[Id] DESC;  
+END;  
+GO
+
+-- =============================================
+-- Stored Procedure: sp_GetOpenJobReceipts
+-- Returns job receipt list joined with items
+-- for the UI grid, filtered by date range.
+-- =============================================
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'sp_GetOpenJobReceipts' AND type = 'P')
+    DROP PROCEDURE [dbo].[sp_GetOpenJobReceipts];
+GO
+
+create PROCEDURE [dbo].[sp_GetOpenJobReceipts]
+    @FromDate DATETIME2 = NULL,
+    @ToDate   DATETIME2 = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        jrm.[Job_Receipt_Id],
+        jrm.[Job_Receipt_Number],
+        jrm.[Job_Receipt_Date],
+        ISNULL(s.[Supplier_Name], 'N/A') AS [Supplier_Name],
+        ISNULL(
+            jrm.[Total_Quantity],
+            CAST(0 AS DECIMAL(18,3))
+        ) AS [Total_Qty],
+        ISNULL(
+            jrm.[Total_Amount],
+            CAST(0 AS DECIMAL(18,3))
+        ) AS [Total_Amount],
+        CAST(0 AS BIT) AS [Is_Selected]
+
+    FROM [dbo].[Job_Receipt_Master] jrm
+
+    LEFT JOIN [dbo].[Supplier] s
+        ON s.[Supplier_Id] = jrm.[Supplier_Id]
+
+    WHERE jrm.[DeletedAt] IS NULL
+
+     -- AND (
+   ----         @FromDate IS NULL
+            OR jrm.[Job_Receipt_Date] >= @FromDate
+     --     )
+
+    ----  AND (
+        --    @ToDate IS NULL
+       --     OR jrm.[Job_Receipt_Date] < DATEADD(DAY, 1, CAST(@ToDate AS DATE))
+        --  )
+		  and  Job_Receipt_Id not in (select Job_Receipt_Master_Id from Production_Batch_Details)
+
+    ORDER BY jrm.[Id] DESC;
+END;
+
+-- =============================================
+-- Stored Procedure: sp_GetOpenJobReceiptsEdit
+-- Returns job receipt list joined with items
+-- for the UI grid, filtered by date range.
+-- =============================================
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'sp_GetOpenJobReceiptsEdit' AND type = 'P')
+    DROP PROCEDURE [dbo].[sp_GetOpenJobReceiptsEdit];
+GO
+
+CREATE PROCEDURE [dbo].[sp_GetOpenJobReceiptsEdit]    
+    @Production_Batch_Id UNIQUEIDENTIFIER,    
+    @FromDate            DATETIME2 = NULL,    
+    @ToDate              DATETIME2 = NULL    
+AS    
+BEGIN    
+    SET NOCOUNT ON;    
+    
+    SELECT    
+        jm.[Job_Receipt_Id],    
+        jm.[Job_Receipt_Number],    
+        jm.[Job_Receipt_Date],    
+    
+        ISNULL(    
+            s.[Supplier_Name],    
+            'N/A'    
+        ) AS [Supplier_Name],    
+    
+        ISNULL(    
+            jm.[Total_Quantity],    
+            CAST(0 AS DECIMAL(18,3))    
+        ) AS [Total_Qty],    
+    
+        ISNULL(    
+            jm.[Total_Amount],    
+            CAST(0 AS DECIMAL(18,3))    
+        ) AS [Total_Amount],    
+    
+        -- Indicates whether Job Receipt is already added    
+        CAST(1 AS BIT) AS [Is_Selected],    
+    
+        -- Production Batch details    
+        pd.[Id] AS [Production_Batch_Detail_Id],    
+        pd.[Production_Batch_Id],    
+        pd.[Job_Receipt_Master_Id]    
+    
+    FROM dbo.[Job_Receipt_Master] AS jm    
+    
+    LEFT JOIN dbo.[Supplier] AS s    
+        ON s.[Supplier_Id] = jm.[Supplier_Id]    
+    
+    INNER JOIN dbo.[Production_Batch_Details] AS pd    
+        ON pd.[Job_Receipt_Master_Id] = jm.[Job_Receipt_Id]    
+        AND pd.[Production_Batch_Id] = @Production_Batch_Id    
+    
+    WHERE    
+        jm.[DeletedAt] IS NULL    
+    
+        --AND (    
+        --    @FromDate IS NULL    
+        --    OR jm.[Job_Receipt_Date] >= @FromDate    
+        --)    
+    
+        --AND (    
+        --    @ToDate IS NULL    
+        --    OR jm.[Job_Receipt_Date] < DATEADD(DAY, 1, CAST(@ToDate AS DATE))    
+        --)    
+    
+    UNION    
+    
+    SELECT    
+        jrm.[Job_Receipt_Id],    
+        jrm.[Job_Receipt_Number],    
+        jrm.[Job_Receipt_Date],    
+    
+        ISNULL(    
+            s.[Supplier_Name],    
+            'N/A'    
+        ) AS [Supplier_Name],    
+    
+        ISNULL(    
+            jrm.[Total_Quantity],    
+            CAST(0 AS DECIMAL(18,3))    
+        ) AS [Total_Qty],    
+    
+        ISNULL(    
+            jrm.[Total_Amount],    
+            CAST(0 AS DECIMAL(18,3))    
+        ) AS [Total_Amount],    
+    
+        CAST(0 AS BIT) AS [Is_Selected],    
+    
+        -- Production_Batch_Details.Id is INT    
+        CAST(0 AS INT) AS [Production_Batch_Detail_Id],    
+    
+        -- These are UNIQUEIDENTIFIER    
+        CAST(    
+            '00000000-0000-0000-0000-000000000000'    
+            AS UNIQUEIDENTIFIER    
+        ) AS [Production_Batch_Id],    
+    
+        CAST(    
+            '00000000-0000-0000-0000-000000000000'    
+            AS UNIQUEIDENTIFIER    
+        ) AS [Job_Receipt_Master_Id]    
+    
+    FROM dbo.[Job_Receipt_Master] AS jrm    
+    
+    LEFT JOIN dbo.[Supplier] AS s    
+        ON s.[Supplier_Id] = jrm.[Supplier_Id]    
+    
+    WHERE    
+        jrm.[DeletedAt] IS NULL    
+    
+        --AND (    
+        --    @FromDate IS NULL    
+        --    OR jrm.[Job_Receipt_Date] >= @FromDate    
+        --)    
+    
+        --AND (    
+        --    @ToDate IS NULL    
+        --    OR jrm.[Job_Receipt_Date] < DATEADD(DAY, 1, CAST(@ToDate AS DATE))    
+        --)    
+    
+        AND NOT EXISTS    
+        (    
+            SELECT 1    
+            FROM dbo.[Production_Batch_Details] AS pbd    
+            WHERE pbd.[Job_Receipt_Master_Id] = jrm.[Job_Receipt_Id]    
+        )    
+    
+    ORDER BY    
+        [Job_Receipt_Date] DESC;    
+    
+
+  
+END;
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Production_Cost_Master'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Production_Cost_Master]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business/Application Identifier
+        [Production_Cost_Id] UNIQUEIDENTIFIER NOT NULL,        
+
+        -- Cost Number
+        [Production_Cost_Number] NVARCHAR(15) NOT NULL,
+
+	   [Production_Batch_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Company
+        [Company_Id] INT NOT NULL,
+
+        -- Production Dates
+        [Start_Date] DATETIME NULL,
+
+        [End_Date] DATETIME NULL,
+
+		 -- Screening Dates
+        [ScreeningStart_Date] DATETIME NULL,
+
+        [ScreeningEnd_Date] DATETIME NULL,
+
+		[Total_Expenses] DECIMAL(18,3) NOT NULL,
+
+        -- Remarks
+        [Remarks] NVARCHAR(1000) NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Production_Cost_Master]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Unique Business ID
+        CONSTRAINT [UQ_Production_Cost_Master_Id]
+            UNIQUE ([Production_Cost_Id]),
+
+        -- Unique Batch Number
+        CONSTRAINT [UQ_Production_Cost_Master_Number]
+            UNIQUE ([Production_Cost_Number]),
+
+        -- Company Foreign Key
+        CONSTRAINT [FK_Production_Batch_Master]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id]),
+
+		-- Batch Foreign Key
+         CONSTRAINT [FK_Production_Batch_Master_Cost]
+            FOREIGN KEY ([Production_Batch_Id])
+            REFERENCES [dbo].[Production_Batch_Master]([Production_Batch_Id]),
+    );
+
+END;
+
+ALTER TABLE [dbo].[Charge]
+ADD CONSTRAINT [UQ_Charge_Charge_Id]
+UNIQUE ([Charge_Id]);
+
+
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Production_Cost_Charges'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Production_Cost_Charges]
+    (
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        [Production_Cost_Charges_Id] UNIQUEIDENTIFIER NOT NULL,     
+
+        [Production_Cost_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        [Charge_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        [Percentage] NUMERIC(5, 2) NOT NULL,
+
+        [Amount] NUMERIC(12, 2) NOT NULL,
+
+        [Remarks] NVARCHAR(1000) NULL,
+
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        CONSTRAINT [PK_Production_Cost_Charges]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        CONSTRAINT [UQ_Production_Cost_Charges_Id]
+            UNIQUE ([Production_Cost_Charges_Id]),
+
+        CONSTRAINT [FK_Production_Cost_Charges_Charge]
+            FOREIGN KEY ([Charge_Id])
+            REFERENCES [dbo].[Charge]([Charge_Id]),
+
+		CONSTRAINT [FK_Production_Cost_Charges_Production_Cost]
+            FOREIGN KEY ([Production_Cost_Id])
+            REFERENCES [dbo].[Production_Cost_Master]([Production_Cost_Id]),
+
+        CONSTRAINT [UQ_Production_Cost_Charges_Cost_Charge]
+            UNIQUE ([Production_Cost_Id], [Charge_Id])
+    );
+
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Production_Cost_Screening'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Production_Cost_Screening]
+    (
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        [Production_Cost_Screening_Id] UNIQUEIDENTIFIER NOT NULL,     
+
+        [Production_Cost_Id] UNIQUEIDENTIFIER NOT NULL,
+
+		[Days] NVARCHAR(100) NOT NULL,
+
+        [Persons] INT NULL,
+
+       	[Rate] [numeric](15, 5) NULL,
+
+	    [Amount] [numeric](15, 5) NULL, 
+
+        [Remarks] NVARCHAR(1000) NULL,
+
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        CONSTRAINT [PK_Production_Cost_Screening]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        CONSTRAINT [UQ_Production_Cost_Screening_Id]
+            UNIQUE ([Production_Cost_Screening_Id]),  
+
+		CONSTRAINT [FK_Production_Cost_Screening_Production_Cost]
+            FOREIGN KEY ([Production_Cost_Id])
+            REFERENCES [dbo].[Production_Cost_Master]([Production_Cost_Id])
+   
+    );
+
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Despatch'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Despatch]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business/Application Identifier
+        [Production_Despatch_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Despatch Number
+        [Production_Despatch_Number] NVARCHAR(15) NOT NULL,
+
+        -- Despatch Date
+        [Despatch_Date] DATETIME NULL,
+
+        -- Production Batch
+        [Production_Batch_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Company
+        [Company_Id] INT NOT NULL,
+
+        -- Quantity Details
+        [Batch_Qty] DECIMAL(18,3) NOT NULL,
+
+        [First_Weight] DECIMAL(18,3) NOT NULL,
+
+        [Second_Weight] DECIMAL(18,3) NOT NULL,
+
+        [Despatch_Qty] DECIMAL(18,3) NOT NULL,
+
+        [Loss_Qty] DECIMAL(18,3) NOT NULL,
+
+        -- Remarks
+        [Remarks] NVARCHAR(1000) NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Despatch]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Unique Business ID
+        CONSTRAINT [UQ_Despatch_Id]
+            UNIQUE ([Production_Despatch_Id]),
+
+        -- Unique Despatch Number
+        CONSTRAINT [UQ_Despatch_Number]
+            UNIQUE ([Production_Despatch_Number]),
+
+        -- Company Foreign Key
+        CONSTRAINT [FK_Despatch_Company]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id]),
+
+        -- Production Batch Foreign Key
+        CONSTRAINT [FK_Despatch_Production_Batch]
+            FOREIGN KEY ([Production_Batch_Id])
+            REFERENCES [dbo].[Production_Batch_Master]([Production_Batch_Id])
+    );
+
+END;
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Billing_Master'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Billing_Master]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business/Application Identifier
+        [Billing_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Billing Number
+        [Billing_Number] NVARCHAR(15) NOT NULL,
+
+        -- Billing Date
+        [Billing_Date] DATETIME NULL,
+
+        -- Supplier
+        [Supplier_Id] INT NOT NULL,
+
+        -- Company
+        [Company_Id] INT NOT NULL,
+
+        -- Billing Summary
+        [Total_Bill_Qty] DECIMAL(18,3) NOT NULL,
+
+        [Total_Bill_Amount] DECIMAL(18,2) NOT NULL,
+
+        -- Payment Status
+        [Payment_Status] INT NOT NULL,
+
+        -- Remarks
+        [Remarks] NVARCHAR(1000) NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Billing_Master]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Unique Business ID
+        CONSTRAINT [UQ_Billing_Master_Id]
+            UNIQUE ([Billing_Id]),
+
+        -- Unique Billing Number
+        CONSTRAINT [UQ_Billing_Master_Number]
+            UNIQUE ([Billing_Number]),
+
+        -- Company Foreign Key
+        CONSTRAINT [FK_Billing_Master_Company]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id]),
+
+
+    );
+
+END;
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Billing_Details'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Billing_Details]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business/Application Identifier
+        [Billing_Detail_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Billing Reference
+        [Billing_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Despatch Reference
+        [Production_Despatch_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Despatch Number
+        [Production_Despatch_Number] NVARCHAR(15) NOT NULL,
+
+        -- Despatch Date
+        [Despatch_Date] DATETIME NULL,
+
+        -- Quantity
+        [Net_Bill_Qty] DECIMAL(18,3) NOT NULL,
+
+        -- Rate
+        [Rate_Per_Kg] DECIMAL(18,2) NOT NULL,
+
+        -- Bill Amount
+        [Bill_Amount] DECIMAL(18,2) NOT NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Billing_Details]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Unique Business ID
+        CONSTRAINT [UQ_Billing_Details_Id]
+            UNIQUE ([Billing_Detail_Id]),
+
+        -- Billing Foreign Key
+        CONSTRAINT [FK_Billing_Details_Billing]
+            FOREIGN KEY ([Billing_Id])
+            REFERENCES [dbo].[Billing_Master]([Billing_Id]),
+
+        -- Despatch Foreign Key
+        CONSTRAINT [FK_Billing_Details_Despatch]
+            FOREIGN KEY ([Production_Despatch_Id])
+            REFERENCES [dbo].[Despatch]([Production_Despatch_Id]),
+
+    );
+
+END;
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Billing_Receipt_Master'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Billing_Receipt_Master]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business Identifier
+        [Billing_Receipt_Id] UNIQUEIDENTIFIER NOT NULL,
+
+		    -- Billing Reference
+        [Billing_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Billing Number
+        [Billing_Number] NVARCHAR(15) NOT NULL,
+    
+        -- Company
+        [Company_Id] INT NOT NULL,
+
+        -- Supplier
+        [Supplier_Id] INT NOT NULL,
+
+        -- Bill Information
+        [Billing_Receipt_Number] NVARCHAR(20) NULL,
+
+        [Billing_Receipt_Date] DATETIME NULL,
+
+        [Billing_Amount] DECIMAL(18,3) NOT NULL,
+
+        -- Calculated Quantities
+        [Total_Debit_Quantity] DECIMAL(18,3) NOT NULL
+            DEFAULT 0,
+
+        [Net_Quantity] DECIMAL(18,3) NOT NULL
+            DEFAULT 0,
+
+        -- Calculated Amount
+        [Net_Amount] DECIMAL(18,3) NOT NULL
+            DEFAULT 0,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Billing_Receipt_Master]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Business ID
+        CONSTRAINT [UQ_Billing_Receipt_Master_Id]
+            UNIQUE ([Billing_Receipt_Id]),
+
+	    -- Billing FK
+         -- Despatch Foreign Key
+        CONSTRAINT [FK_Billing_Receipt_Master_Billing_Master]
+            FOREIGN KEY ([Billing_Id])
+            REFERENCES [dbo].[Billing_Master]([Billing_Id]),
+
+        -- Company FK
+        CONSTRAINT [FK_Billing_Receipt_Master_Company]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id]),
+
+        -- Supplier FK
+        CONSTRAINT [FK_Billing_Receipt_Master_Supplier]
+            FOREIGN KEY ([Supplier_Id])
+            REFERENCES [dbo].[Supplier]([Id])
+    );
+
+END;
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Billing_Receipt_Details'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Billing_Receipt_Details]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business Identifier
+        [Billing_Receipt_Detail_Id] UNIQUEIDENTIFIER NOT NULL,
+    
+        -- Bill Receipt
+        [Billing_Receipt_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Deduction Type
+        [Deduction_Type] NVARCHAR(100) NOT NULL,
+
+        -- Deduction Quantity
+        [Deduction_Quantity] DECIMAL(18,3) NOT NULL
+            DEFAULT 0,
+
+        -- Deduction Percentage
+        [Deduction_Percentage] DECIMAL(8,3) NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL,
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Billing_Receipt_Details]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Business ID
+        CONSTRAINT [UQ_Billing_Receipt_Details_Id]
+            UNIQUE ([Billing_Receipt_Detail_Id]),
+
+        -- Bill Receipt FK
+        CONSTRAINT [FK_Billing_Receipt_Details_Master]
+            FOREIGN KEY ([Billing_Receipt_Id])
+            REFERENCES [dbo].[Billing_Receipt_Master]([Billing_Receipt_Id])
+    );
+
+END;
+
+alter table job_receipt_master add DriverName varchar(100)
+Go
+alter table job_receipt_master add DriverPhone varchar(100)
+Go
+
+Alter table job_receipt_master add Location nvarchar(max) default NULL
+Go
+Alter table job_receipt_master add transport_Charges decimal(18,3) DEFAULT 0.000
+alter table job_receipt_master add DriverPhone varchar(100)
+
+      
+CREATE PROCEDURE [dbo].sp_GetProductionBatchCostList     
+    @SearchText NVARCHAR(255) = NULL,      
+    @FromDate   DATETIME2     = NULL,      
+    @ToDate     DATETIME2     = NULL      
+AS      
+BEGIN      
+    SET NOCOUNT ON;      
+      
+    SELECT      
+        pb.[Id],      
+        pb.[Production_Batch_Id],      
+        pb.[Production_Batch_Number],        
+        pb.[Start_Date],      
+        pb.[End_Date]   ,    
+  isnull(sum(pd.Input_Quantity),0) as total_Input_Qty    
+    FROM [dbo].[Production_Batch_Master] pb       
+ inner join [Production_Batch_Details] pd on pd.Production_Batch_Id=pb.Production_Batch_Id     
+    WHERE pb.[DeletedAt] IS NULL      
+      AND (@SearchText IS NULL OR pb.[Production_Batch_Number] LIKE '%' + @SearchText + '%')      
+      AND (@FromDate IS NULL OR pb.[Start_Date] >= @FromDate)      
+      AND (@ToDate   IS NULL OR pb.[Start_Date] <= @ToDate)      
+	  and pb.Production_Batch_Id not in (select Production_Batch_Id from Production_Cost_Master)
+   group by    pb.[Id],      
+        pb.[Production_Batch_Id],      
+        pb.[Production_Batch_Number],        
+        pb.[Start_Date],      
+        pb.[End_Date]     
+    ORDER BY pb.[Id] DESC;      
+END; 
+
+
+ALTER TABLE [dbo].[Payment_Mode]
+ADD CONSTRAINT UQ_Payment_Mode_PaymentMode_Id
+UNIQUE ([PaymentMode_Id]);
+
+
+ALTER TABLE [dbo].[Payment_Terms]
+ADD CONSTRAINT [UQ_Payment_Terms_PaymentTerms_Id]
+UNIQUE ([PaymentTerms_Id]);
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Payment_Voucher'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Payment_Voucher]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL,
+
+        -- Business Identifier
+        [Payment_Voucher_Id] UNIQUEIDENTIFIER NOT NULL
+            DEFAULT NEWSEQUENTIALID(),
+
+        -- Payment Voucher Number
+        [Payment_Voucher_Number] NVARCHAR(20) NOT NULL,
+
+        -- Voucher Date
+        [Payment_Voucher_Date] DATETIME NOT NULL,
+
+        -- Company
+        [Company_Id] INT NOT NULL,
+
+        -- Supplier
+        [Supplier_Id] INT NULL,
+
+		-- Payment Mode
+		[PaymentMode_Id] UNIQUEIDENTIFIER NULL,
+
+		-- Payment Terms
+		[PaymentTerms_Id] UNIQUEIDENTIFIER NULL,
+
+        -- External Reference
+        [Reference_Number] NVARCHAR(50) NULL,
+
+        -- Total Payment Amount
+        [Total_Amount] DECIMAL(18,3) NOT NULL
+            DEFAULT 0,
+
+        -- Voucher Status
+        [Status] NVARCHAR(30) NOT NULL
+            DEFAULT 'Draft',
+
+        -- Remarks
+        [Remarks] NVARCHAR(1000) NULL,
+
+        -- Audit Fields
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME NULL
+            DEFAULT GETDATE(),
+
+        [UpdatedBy] NVARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME NULL,
+
+        [DeletedBy] NVARCHAR(100) NULL,
+
+        [DeletedAt] DATETIME NULL,
+
+        -- Primary Key
+        CONSTRAINT [PK_Payment_Master]
+            PRIMARY KEY CLUSTERED ([Id]),
+
+        -- Business ID
+        CONSTRAINT [UQ_Payment_Voucher_Id]
+            UNIQUE ([Payment_Voucher_Id]),
+
+        -- Company FK
+        CONSTRAINT [FK_Payment_Voucher_Company]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id]),
+
+        -- Supplier FK
+        CONSTRAINT [FK_Payment_Voucher_Supplier]
+            FOREIGN KEY ([Supplier_Id])
+            REFERENCES [dbo].[Supplier]([Id]),
+
+-- Payment Mode FK
+CONSTRAINT [FK_Payment_Voucher_PaymentMode]
+    FOREIGN KEY ([PaymentMode_Id])
+    REFERENCES [dbo].[Payment_Mode]([PaymentMode_Id]),
+
+-- Payment Terms FK
+CONSTRAINT [FK_Payment_Voucher_PaymentTerms]
+    FOREIGN KEY ([PaymentTerms_Id])
+    REFERENCES [dbo].[Payment_Terms]([PaymentTerms_Id])
+    );
+
+
+END;
+
+Go
+
+CREATE TABLE Wages (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Wages_Id UNIQUEIDENTIFIER NOT NULL,
+    Wages_Number NVARCHAR(MAX) NOT NULL,
+    Wages_Date DATETIME2 NOT NULL,
+    Wages_Remarks NVARCHAR(MAX) NULL,
+    Wages_Amount DECIMAL(18,3) NOT NULL,
+    -- AuditFields columns (assuming standard audit fields based on inheritance)
+   	[IsDeleted] [bit] NOT NULL,
+	[CreatedBy] [varchar](max) NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[UpdatedBy] [varchar](max) NULL,
+	[UpdatedAt] [datetime] NULL,
+	[DeletedBy] [varchar](max) NULL,
+	[DeletedAt] [datetime] NULL,
+)
+
+Go
+
+CREATE TABLE Wages_Charges (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Wages_Charge_Id UNIQUEIDENTIFIER NOT NULL,
+    Wages_Id UNIQUEIDENTIFIER NOT NULL,
+    Charge_Id UNIQUEIDENTIFIER NOT NULL,
+    Percentage DECIMAL(18,3) NOT NULL,
+    Amount DECIMAL(18,3) NOT NULL
+);
+END;
+
+CREATE   PROCEDURE dbo.GetMonthlyReport  
+(  
+    @SearchText NVARCHAR(100) = NULL,  
+    @FromDate   DATETIME2 = NULL,  
+    @ToDate     DATETIME2 = NULL  
+)  
+AS  
+BEGIN  
+    SET NOCOUNT ON;  
+  
+    ;WITH BatchData AS  
+    (  
+        SELECT  
+            PB.Id AS BatchId,  
+            PB.Production_Batch_Id,  
+            PB.Production_Batch_Number,  
+            PB.Start_Date  
+        FROM Production_Batch_Master PB  
+        WHERE PB.DeletedAt IS NULL  
+          AND  
+          (  
+              NULLIF(LTRIM(RTRIM(@SearchText)), '') IS NULL  
+              OR PB.Production_Batch_Number LIKE '%' + LTRIM(RTRIM(@SearchText)) + '%'  
+          )  
+          AND  
+          (  
+              @FromDate IS NULL  
+              OR PB.Start_Date >= @FromDate  
+          )  
+          AND  
+          (  
+              @ToDate IS NULL  
+              OR PB.Start_Date < DATEADD(DAY, 1, CAST(@ToDate AS DATE))  
+          )  
+    ),  
+  
+    -- Raw material quantity  
+    RawMaterialQtyData AS  
+    (  
+        SELECT  
+            PBD.Production_Batch_Id,  
+            SUM(ISNULL(PBD.Input_Quantity, 0)) AS RawMaterialQty  
+        FROM Production_Batch_Details PBD  
+        INNER JOIN BatchData B  
+            ON B.Production_Batch_Id = PBD.Production_Batch_Id  
+        GROUP BY  
+            PBD.Production_Batch_Id  
+    ),  
+  
+    -- Material cost  
+    -- DISTINCT is important to match the original C# ToHashSet() logic  
+    MaterialCostData AS  
+    (  
+        SELECT  
+            X.Production_Batch_Id,  
+            SUM(ISNULL(JRM.Total_Amount, 0)) AS MaterialCost  
+        FROM  
+        (  
+            SELECT DISTINCT  
+                PBD.Production_Batch_Id,  
+                PBD.Job_Receipt_Master_Id  
+            FROM Production_Batch_Details PBD  
+            INNER JOIN BatchData B  
+                ON B.Production_Batch_Id = PBD.Production_Batch_Id  
+        ) X  
+        INNER JOIN Job_Receipt_Master JRM  
+            ON JRM.Job_Receipt_Id = X.Job_Receipt_Master_Id  
+           AND JRM.DeletedAt IS NULL  
+        GROUP BY  
+            X.Production_Batch_Id  
+    ),  
+  
+    -- Production and wastage  
+    ProductionData AS  
+    (  
+        SELECT  
+            D.Production_Batch_Id,  
+  
+            SUM(ISNULL(D.Despatch_Qty, 0)) AS ProductionQty,  
+  
+            SUM(ISNULL(D.Loss_Qty, 0)) AS WastageQty  
+  
+        FROM Despatch D  
+        INNER JOIN BatchData B  
+            ON B.Production_Batch_Id = D.Production_Batch_Id  
+        WHERE D.DeletedAt IS NULL  
+        GROUP BY  
+            D.Production_Batch_Id  
+    ),  
+  
+    -- Other production costs  
+    CostData AS  
+    (  
+        SELECT  
+            PC.Production_Batch_Id,  
+  
+            SUM(ISNULL(PC.Total_Expenses, 0)) AS OtherCost  
+  
+        FROM Production_Cost_Master PC  
+        INNER JOIN BatchData B  
+            ON B.Production_Batch_Id = PC.Production_Batch_Id  
+        WHERE PC.DeletedAt IS NULL  
+        GROUP BY  
+            PC.Production_Batch_Id  
+    ),  
+  
+    -- Sales  
+    SalesData AS  
+    (  
+        SELECT  
+            D.Production_Batch_Id,  
+  
+            SUM(ISNULL(BD.Bill_Amount, 0)) AS SalesAmount  
+  
+        FROM Despatch D  
+  
+        INNER JOIN BatchData B  
+            ON B.Production_Batch_Id = D.Production_Batch_Id  
+  
+        INNER JOIN Billing_Details BD  
+            ON BD.Production_Despatch_Id = D.Production_Despatch_Id  
+           AND BD.DeletedAt IS NULL  
+  
+        INNER JOIN Billing_Master BM  
+            ON BM.Billing_Id = BD.Billing_Id  
+           AND BM.DeletedAt IS NULL  
+  
+        WHERE D.DeletedAt IS NULL  
+  
+        GROUP BY  
+            D.Production_Batch_Id  
+    ),  
+  
+    ReportData AS  
+    (  
+        SELECT  
+            B.BatchId,  
+  
+            B.Start_Date AS [Date],  
+  
+            B.Production_Batch_Number AS BatchNo,  
+  
+            ISNULL(RQ.RawMaterialQty, 0) AS RawMaterialQty,  
+  
+            ISNULL(PD.ProductionQty, 0) AS ProductionQty,  
+  
+            ISNULL(PD.WastageQty, 0) AS WastageQty,  
+  
+            ISNULL(MC.MaterialCost, 0) AS MaterialCost,  
+  
+            ISNULL(CD.OtherCost, 0) AS OtherCost,  
+  
+            ISNULL(MC.MaterialCost, 0)  
+                + ISNULL(CD.OtherCost, 0) AS TotalCost,  
+  
+            ISNULL(SD.SalesAmount, 0) AS SalesAmount  
+  
+        FROM BatchData B  
+  
+        LEFT JOIN RawMaterialQtyData RQ  
+            ON RQ.Production_Batch_Id = B.Production_Batch_Id  
+  
+        LEFT JOIN MaterialCostData MC  
+            ON MC.Production_Batch_Id = B.Production_Batch_Id  
+  
+        LEFT JOIN ProductionData PD  
+            ON PD.Production_Batch_Id = B.Production_Batch_Id  
+  
+        LEFT JOIN CostData CD  
+            ON CD.Production_Batch_Id = B.Production_Batch_Id  
+  
+        LEFT JOIN SalesData SD  
+            ON SD.Production_Batch_Id = B.Production_Batch_Id  
+    ),  
+  
+    CalculatedData AS  
+    (  
+        SELECT  
+            BatchId,  
+            [Date],  
+            BatchNo,  
+            RawMaterialQty,  
+            ProductionQty,  
+            WastageQty,  
+  
+            CASE  
+                WHEN RawMaterialQty = 0 THEN 0  
+                ELSE ProductionQty / RawMaterialQty * 100  
+            END AS YieldPercentage,  
+  
+            MaterialCost,  
+            OtherCost,  
+            TotalCost,  
+  
+            CASE  
+                WHEN ProductionQty = 0 THEN 0  
+                ELSE TotalCost / ProductionQty  
+            END AS CostPerKg,  
+  
+            SalesAmount,  
+  
+            SalesAmount - TotalCost AS ProfitLoss,  
+  
+            CASE  
+                WHEN TotalCost = 0 THEN 0  
+                ELSE  
+                    (SalesAmount - TotalCost) / TotalCost * 100  
+            END AS ProfitPercentage  
+  
+        FROM ReportData  
+    ),  
+  
+    FinalData AS  
+    (  
+        -- Detail rows  
+        SELECT  
+            0 AS SortOrder,  
+            BatchId,  
+            [Date],  
+            BatchNo,  
+            RawMaterialQty,  
+            ProductionQty,  
+            WastageQty,  
+            YieldPercentage,  
+            MaterialCost,  
+            OtherCost,  
+            TotalCost,  
+            CostPerKg,  
+            SalesAmount,  
+            ProfitLoss,  
+            ProfitPercentage,  
+            CAST(0 AS BIT) AS IsTotal  
+        FROM CalculatedData  
+  
+        UNION ALL  
+  
+        -- Total row  
+        SELECT  
+            1 AS SortOrder,  
+            NULL AS BatchId,  
+            NULL AS [Date],  
+            'TOTAL' AS BatchNo,  
+  
+            SUM(RawMaterialQty) AS RawMaterialQty,  
+            SUM(ProductionQty) AS ProductionQty,  
+            SUM(WastageQty) AS WastageQty,  
+  
+            CASE  
+                WHEN SUM(RawMaterialQty) = 0 THEN 0  
+                ELSE  
+                    SUM(ProductionQty)  
+                    / SUM(RawMaterialQty) * 100  
+            END AS YieldPercentage,  
+  
+            SUM(MaterialCost) AS MaterialCost,  
+            SUM(OtherCost) AS OtherCost,  
+            SUM(TotalCost) AS TotalCost,  
+  
+            CASE  
+                WHEN SUM(ProductionQty) = 0 THEN 0  
+                ELSE  
+                    SUM(TotalCost)  
+                    / SUM(ProductionQty)  
+            END AS CostPerKg,  
+  
+            SUM(SalesAmount) AS SalesAmount,  
+  
+            SUM(SalesAmount) - SUM(TotalCost) AS ProfitLoss,  
+  
+            CASE  
+                WHEN SUM(TotalCost) = 0 THEN 0  
+                ELSE  
+                    (SUM(SalesAmount) - SUM(TotalCost))  
+                    / SUM(TotalCost) * 100  
+            END AS ProfitPercentage,  
+  
+            CAST(1 AS BIT) AS IsTotal  
+  
+        FROM CalculatedData  
+    )  
+  
+    SELECT  
+        [Date],  
+        BatchNo,  
+        RawMaterialQty,  
+        ProductionQty,  
+        WastageQty,  
+        YieldPercentage,  
+        MaterialCost,  
+        OtherCost,  
+        TotalCost,  
+        CostPerKg,  
+        SalesAmount,  
+        ProfitLoss,  
+        ProfitPercentage,  
+        IsTotal  
+  
+    FROM FinalData  
+  
+    ORDER BY  
+        SortOrder,  
+        [Date],  
+        BatchId;  
+  
+END;  
+
+
+GO
+
+CREATE TABLE [dbo].[Job_Receipt_Charge](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[Job_Receipt_Charge_Id] [uniqueidentifier] NOT NULL,
+	[Job_Receipt_Id] [uniqueidentifier] NOT NULL,
+	[Charge_Id] [uniqueidentifier] NOT NULL,
+	[Percentage] [decimal](18, 3) NOT NULL,
+	[Amount] [decimal](18, 3) NOT NULL
+	)
+
+GO
+Alter table Job_Receipt_Master add Supplier NVARCHAR(MAX) NULL
+
+
+ALTER TABLE [dbo].[AspNetUsers]
+ADD [FailedLoginAttempts] [int] NOT NULL
+    CONSTRAINT [DF_AspNetUsers_FailedLoginAttempts] DEFAULT ((0));
+
+ALTER TABLE [dbo].[AspNetUsers]
+ADD [LockoutEnd] [datetime2](7) NULL;
+
+ALTER TABLE [dbo].[AspNetUsers]
+ALTER COLUMN [IsLocked] [bit] NOT NULL;
+
+
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Sales_Master'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Sales_Master]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL
+            CONSTRAINT [PK_Sales_Master] PRIMARY KEY,
+
+        -- Business/Application Identifier
+        [Sales_Id] UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT [DF_Sales_Master_Sales_Id]
+            DEFAULT NEWSEQUENTIALID(),
+
+        -- Sales Number
+        [Sales_Number] NVARCHAR(30) NOT NULL,
+
+        -- Sales Date
+        [Sales_Date] DATETIME2(0) NOT NULL,
+
+        -- Customer
+        [Customer_Id] INT NULL,
+
+        -- Sales Type
+        [Sales_Type] NVARCHAR(50) NULL,
+
+        -- Amounts
+        [Sub_Total] DECIMAL(18,2) NOT NULL
+            CONSTRAINT [DF_Sales_Master_Sub_Total]
+            DEFAULT (0),
+
+        [Charge_Total] DECIMAL(18,2) NOT NULL
+            CONSTRAINT [DF_Sales_Master_Charge_Total]
+            DEFAULT (0),
+
+        [Net_Amount] DECIMAL(18,2) NOT NULL
+            CONSTRAINT [DF_Sales_Master_Net_Amount]
+            DEFAULT (0),
+
+        -- Remarks
+        [Remarks] NVARCHAR(1000) NULL,
+
+        -- Terms & Conditions
+        [Terms_Conditions] NVARCHAR(MAX) NULL,
+
+        -- Company
+        [Company_Id] INT NULL,
+
+        -- Audit
+        [CreatedBy] VARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME2(0) NOT NULL
+            CONSTRAINT [DF_Sales_Master_CreatedAt]
+            DEFAULT SYSUTCDATETIME(),
+
+        [UpdatedBy] VARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME2(0) NULL,
+
+        [IsActive] BIT NOT NULL
+            CONSTRAINT [DF_Sales_Master_IsActive]
+            DEFAULT (1),
+
+        [IsDeleted] BIT NOT NULL
+            CONSTRAINT [DF_Sales_Master_IsDeleted]
+            DEFAULT (0),
+
+        -- Constraints
+        CONSTRAINT [UQ_Sales_Master_Sales_Id]
+            UNIQUE ([Sales_Id]),
+
+        CONSTRAINT [CK_Sales_Master_Sales_Number]
+            CHECK (LEN(LTRIM(RTRIM([Sales_Number]))) > 0),
+
+        CONSTRAINT [CK_Sales_Master_Sub_Total]
+            CHECK ([Sub_Total] >= 0),
+
+        CONSTRAINT [CK_Sales_Master_Charge_Total]
+            CHECK ([Charge_Total] >= 0),
+
+        CONSTRAINT [CK_Sales_Master_Net_Amount]
+            CHECK ([Net_Amount] >= 0),
+
+        -- Company FK
+        CONSTRAINT [FK_Sales_Master_Company]
+            FOREIGN KEY ([Company_Id])
+            REFERENCES [dbo].[Company]([Id])
+    );
+
+    -- Unique Sales Number
+    CREATE UNIQUE INDEX [UX_Sales_Master_Sales_Number]
+        ON [dbo].[Sales_Master] ([Sales_Number]);
+
+    -- Sales Date
+    CREATE INDEX [IX_Sales_Master_Sales_Date]
+        ON [dbo].[Sales_Master] ([Sales_Date]);
+
+    -- Customer
+    CREATE INDEX [IX_Sales_Master_Customer]
+        ON [dbo].[Sales_Master] ([Customer_Id]);
+
+    -- Company
+    CREATE INDEX [IX_Sales_Master_Company]
+        ON [dbo].[Sales_Master] ([Company_Id]);
+
+END
+GO
+
+
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Sales_Detail'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Sales_Detail]
+    (
+        -- Primary Key
+        [Id] BIGINT IDENTITY(1,1) NOT NULL
+            CONSTRAINT [PK_Sales_Detail] PRIMARY KEY,
+
+        -- Business/Application Identifier
+        [Sales_Detail_Id] UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT [DF_Sales_Detail_Sales_Detail_Id]
+            DEFAULT NEWSEQUENTIALID(),
+
+        -- Sales Reference
+        [Sales_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Product
+        [Product_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- UOM
+        [UOM_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Quantity
+        [Quantity] DECIMAL(18,3) NOT NULL,
+
+        -- Rate
+        [Rate] DECIMAL(18,2) NOT NULL,
+
+        -- Amount
+        [Gross_Amount] DECIMAL(18,2) NOT NULL
+            CONSTRAINT [DF_Sales_Detail_Gross_Amount]
+            DEFAULT (0),
+
+        -- Remarks
+        [Remarks] NVARCHAR(500) NULL,
+
+        -- Audit
+        [CreatedBy] VARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME2(0) NOT NULL
+            CONSTRAINT [DF_Sales_Detail_CreatedAt]
+            DEFAULT SYSUTCDATETIME(),
+
+        [UpdatedBy] VARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME2(0) NULL,
+
+        -- Constraints
+        CONSTRAINT [UQ_Sales_Detail_Sales_Detail_Id]
+            UNIQUE ([Sales_Detail_Id]),
+
+        CONSTRAINT [FK_Sales_Detail_Sales_Master]
+            FOREIGN KEY ([Sales_Id])
+            REFERENCES [dbo].[Sales_Master]([Sales_Id]),
+
+        CONSTRAINT [CK_Sales_Detail_Quantity]
+            CHECK ([Quantity] > 0),
+
+        CONSTRAINT [CK_Sales_Detail_Rate]
+            CHECK ([Rate] >= 0),
+
+        CONSTRAINT [CK_Sales_Detail_Gross_Amount]
+            CHECK ([Gross_Amount] >= 0)
+    );
+
+    -- Sales
+    CREATE INDEX [IX_Sales_Detail_Sales_Id]
+        ON [dbo].[Sales_Detail] ([Sales_Id]);
+
+    -- Product
+    CREATE INDEX [IX_Sales_Detail_Product_Id]
+        ON [dbo].[Sales_Detail] ([Product_Id]);
+
+    -- UOM
+    CREATE INDEX [IX_Sales_Detail_UOM_Id]
+        ON [dbo].[Sales_Detail] ([UOM_Id]);
+
+END
+GO
+
+
+
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Sales_Stock_Allocation'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Sales_Stock_Allocation]
+    (
+        -- Primary Key
+        [Id] BIGINT IDENTITY(1,1) NOT NULL
+            CONSTRAINT [PK_Sales_Stock_Allocation] PRIMARY KEY,
+
+        -- Business/Application Identifier
+        [Sales_Stock_Allocation_Id] UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT [DF_Sales_Stock_Allocation_Id]
+            DEFAULT NEWSEQUENTIALID(),
+
+        -- Sales Detail Reference
+        [Sales_Detail_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Stock Reference
+        [Stock_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Batch Reference
+        [Batch_Id] UNIQUEIDENTIFIER NULL,
+
+        -- Allocated Quantity
+        [Allocated_Qty] DECIMAL(18,3) NOT NULL,
+
+        -- Audit
+        [CreatedBy] VARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME2(0) NOT NULL
+            CONSTRAINT [DF_Sales_Stock_Allocation_CreatedAt]
+            DEFAULT SYSUTCDATETIME(),
+
+        [UpdatedBy] VARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME2(0) NULL,
+
+        -- Constraints
+        CONSTRAINT [UQ_Sales_Stock_Allocation_Id]
+            UNIQUE ([Sales_Stock_Allocation_Id]),
+
+        CONSTRAINT [FK_Sales_Stock_Allocation_Sales_Detail]
+            FOREIGN KEY ([Sales_Detail_Id])
+            REFERENCES [dbo].[Sales_Detail]([Sales_Detail_Id]),
+
+        CONSTRAINT [CK_Sales_Stock_Allocation_Qty]
+            CHECK ([Allocated_Qty] > 0)
+    );
+
+    -- Sales Detail
+    CREATE INDEX [IX_Sales_Stock_Allocation_Detail]
+        ON [dbo].[Sales_Stock_Allocation] ([Sales_Detail_Id]);
+
+    -- Stock
+    CREATE INDEX [IX_Sales_Stock_Allocation_Stock]
+        ON [dbo].[Sales_Stock_Allocation] ([Stock_Id]);
+
+    -- Batch
+    CREATE INDEX [IX_Sales_Stock_Allocation_Batch]
+        ON [dbo].[Sales_Stock_Allocation] ([Batch_Id]);
+
+END
+GO
+
+
+ALTER TABLE [dbo].[Charge]
+ADD CONSTRAINT [UQ_Charge_Charge_Id]
+    UNIQUE ([Charge_Id]);
+GO
+
+
+
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.objects
+    WHERE name = 'Sales_Charge'
+      AND type = 'U'
+)
+BEGIN
+
+    CREATE TABLE [dbo].[Sales_Charge]
+    (
+        -- Primary Key
+        [Id] INT IDENTITY(1,1) NOT NULL
+            CONSTRAINT [PK_Sales_Charge] PRIMARY KEY,
+
+        -- Business/Application Identifier
+        [Sales_Charge_Id] UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT [DF_Sales_Charge_Sales_Charge_Id]
+            DEFAULT NEWSEQUENTIALID(),
+
+        -- Sales Reference
+        [Sales_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Charge Master Reference
+        [Charge_Id] UNIQUEIDENTIFIER NOT NULL,
+
+        -- Charge Type
+        [Charge_Type] VARCHAR(50) NOT NULL,
+
+        -- Percentage
+        [Charge_Percentage] DECIMAL(18,2) NULL,
+
+        -- Amount
+        [Charge_Amount] DECIMAL(18,2) NOT NULL
+            CONSTRAINT [DF_Sales_Charge_Charge_Amount]
+            DEFAULT (0),
+
+        -- Remarks
+        [Remarks] NVARCHAR(500) NULL,
+
+        -- Audit
+        [CreatedBy] VARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME2(0) NOT NULL
+            CONSTRAINT [DF_Sales_Charge_CreatedAt]
+            DEFAULT SYSUTCDATETIME(),
+
+        [UpdatedBy] VARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME2(0) NULL,
+
+        -- Constraints
+        CONSTRAINT [UQ_Sales_Charge_Sales_Charge_Id]
+            UNIQUE ([Sales_Charge_Id]),
+
+        CONSTRAINT [FK_Sales_Charge_Sales_Master]
+            FOREIGN KEY ([Sales_Id])
+            REFERENCES [dbo].[Sales_Master]([Sales_Id]),
+
+        CONSTRAINT [FK_Sales_Charge_Charge]
+            FOREIGN KEY ([Charge_Id])
+            REFERENCES [dbo].[Charge]([Charge_Id]),
+
+        CONSTRAINT [CK_Sales_Charge_Amount]
+            CHECK ([Charge_Amount] >= 0),
+
+        CONSTRAINT [CK_Sales_Charge_Percentage]
+            CHECK
+            (
+                [Charge_Percentage] IS NULL
+                OR
+                (
+                    [Charge_Percentage] >= 0
+                    AND [Charge_Percentage] <= 100
+                )
+            )
+    );
+
+    -- Sales
+    CREATE INDEX [IX_Sales_Charge_Sales_Id]
+        ON [dbo].[Sales_Charge] ([Sales_Id]);
+
+    -- Charge
+    CREATE INDEX [IX_Sales_Charge_Charge_Id]
+        ON [dbo].[Sales_Charge] ([Charge_Id]);
+
+END
+GO
+
+
+
+
+alter table Sales_Master add [PaymentMode_Id] [uniqueidentifier] NULL
+alter table Sales_Master add [PaymentTerms_Id] [uniqueidentifier] NULL
+
+ALTER TABLE dbo.Payment_Mode
+ADD CONSTRAINT UQ_Payment_Mode_PaymentMode_Id
+UNIQUE (PaymentMode_Id);
+
+ALTER TABLE dbo.Payment_Terms
+ADD CONSTRAINT UQ_Payment_Terms_PaymentTerms_Id
+UNIQUE (PaymentTerms_Id);
+
+ALTER TABLE dbo.Sales_Master
+ADD CONSTRAINT FK_Sales_Master_PaymentMode
+FOREIGN KEY (PaymentMode_Id)
+REFERENCES dbo.Payment_Mode(PaymentMode_Id);
+
+
+ALTER TABLE dbo.Sales_Master
+ADD CONSTRAINT FK_Sales_Master_PaymentTerms_Id
+FOREIGN KEY (PaymentTerms_Id)
+REFERENCES dbo.Payment_Terms (PaymentTerms_Id);
+
+CREATE TABLE [dbo].[Courier_Master]
+(
+    [Id] INT IDENTITY(1,1) NOT NULL,
+
+    [Courier_Id] UNIQUEIDENTIFIER NOT NULL
+        CONSTRAINT [DF_Courier_Master_Courier_Id]
+        DEFAULT NEWSEQUENTIALID(),
+
+    [Sales_Id] UNIQUEIDENTIFIER NOT NULL,
+
+    [AWB] NVARCHAR(100) NULL,
+
+    [Courier_Company] NVARCHAR(150) NOT NULL,
+
+    [Sender] NVARCHAR(200) NULL,
+
+    [Receiver] NVARCHAR(200) NULL,
+
+    [Origin] NVARCHAR(150) NULL,
+
+    [Destination] NVARCHAR(150) NULL,
+
+    [Weight] DECIMAL(18,3) NULL,
+
+    [Dimensions] NVARCHAR(100) NULL,
+
+    [Charges] DECIMAL(18,2) NULL,
+
+    [Dispatch_Date] DATE NULL,
+
+    [Expected_Delivery_Date] DATE NULL,
+
+    [Courier_Status] NVARCHAR(50) NOT NULL
+        CONSTRAINT [DF_Courier_Master_Courier_Status]
+        DEFAULT ('In Transit'),
+
+    [Remarks] NVARCHAR(500) NULL,
+	    [CreatedBy] VARCHAR(100) NOT NULL,
+
+        [CreatedAt] DATETIME2(0) NOT NULL
+            CONSTRAINT [DF_Sales_Charge_CreatedAt]
+            DEFAULT SYSUTCDATETIME(),
+
+        [UpdatedBy] VARCHAR(100) NULL,
+
+        [UpdatedAt] DATETIME2(0) NULL,
+
+
+    CONSTRAINT [PK_Courier_Master]
+        PRIMARY KEY ([Id]),
+
+    CONSTRAINT [UQ_Courier_Master_Courier_Id]
+        UNIQUE ([Courier_Id])
+);
+
+
+ALTER TABLE [dbo].[Courier_Master]
+ADD CONSTRAINT [CK_Courier_Master_Courier_Status]
+CHECK ([Courier_Status] IN
+(
+    'In Transit',
+    'Delivered',
+    'Returned'
+));
+
+
+ALTER TABLE [dbo].[Courier_Master]
+ADD CONSTRAINT [FK_Courier_Master_Sales_Master]
+FOREIGN KEY ([Sales_Id])
+REFERENCES [dbo].[Sales_Master] ([Sales_Id]);
